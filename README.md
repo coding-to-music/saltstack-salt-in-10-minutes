@@ -23,3 +23,9 @@ git branch -M main
 git remote add origin git@github.com:coding-to-music/saltstack-salt-in-10-minutes.git
 git push -u origin main
 ```
+
+## Install instructions
+
+https://docs.saltproject.io/salt/install-guide/en/latest/
+
+https://docs.saltproject.io/salt/install-guide/en/latest/topics/bootstrap.html#install-bootstrap
