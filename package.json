@@ -1,0 +1,12 @@
+{
+  "name": "saltstack-salt-in-10-minutes",
+  "version": "1.0.0",
+  "description": "# 🚀 Install and configure Saltstack Salt master and minion 🚀",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "git add . && git commit -m Build && git push"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
