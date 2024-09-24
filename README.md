@@ -67,6 +67,78 @@ SaltStack has been made to be very easy to install and get started. The
 `Salt install guide <https://docs.saltproject.io/salt/install-guide/en/latest/>`\_
 provides instructions for all supported platforms.
 
+https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-operating-system/ubuntu.html
+
+```bash
+sudo apt-get update
+```
+
+### How do I check the version of Ubuntu I am running
+
+http://askubuntu.com/questions/686239/ddg#686249
+
+As said in the official page, use:
+
+```bash
+lsb_release -a
+```
+
+Your version appears on the "Description" line.
+
+https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-operating-system/ubuntu.html#install-salt-on-ubuntu-20-04-focal-amd64
+
+To pin your Salt upgrades to the Latest Onedir package of Salt for Ubuntu 20.04 (Focal):
+
+```bash
+mkdir /etc/apt/keyrings
+```
+
+```bash
+sudo curl -fsSL -o /etc/apt/keyrings/salt-archive-keyring-2023.gpg https://repo.saltproject.io/salt/py3/ubuntu/20.04/amd64/SALT-PROJECT-GPG-PUBKEY-2023.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.gpg arch=amd64] https://repo.saltproject.io/salt/py3/ubuntu/20.04/amd64/latest focal main" | sudo tee /etc/apt/sources.list.d/salt.list
+```
+
+Run `sudo apt-get update` to update your packages.
+
+Install the salt-minion, salt-master, or other Salt components:
+
+```bash
+sudo apt-get install salt-master
+sudo apt-get install salt-minion
+sudo apt-get install salt-ssh
+sudo apt-get install salt-syndic
+sudo apt-get install salt-cloud
+sudo apt-get install salt-api
+```
+
+Enable and start the services for salt-minion, salt-master, or other Salt components:
+
+```bash
+sudo systemctl enable salt-master && sudo systemctl start salt-master
+sudo systemctl enable salt-minion && sudo systemctl start salt-minion
+sudo systemctl enable salt-syndic && sudo systemctl start salt-syndic
+sudo systemctl enable salt-api && sudo systemctl start salt-api
+```
+
+Note
+
+When you install a onedir version of Salt (3006 and later), Salt installs its own local version of Python and the dependencies needed for the core functionality of Salt.
+
+After installing a onedir verison of Salt, your system has both a global version of Python at the system level and a local version of Python used by Salt. This architecture change means that the Salt onedir paths for Python are different and you need to change how you install third-party Python dependencies that you use with Salt, including your state files. See Install dependencies for more information.
+
+After installing Salt on your operating system, you need to complete the following post-installation steps:
+
+- Configure the Salt master and minions https://docs.saltproject.io/salt/install-guide/en/latest/topics/configure-master-minion.html#configure-master-minion
+
+- Start the master and minion services https://docs.saltproject.io/salt/install-guide/en/latest/topics/start-salt-services.html#start-salt-services
+
+- Accept the minion keys https://docs.saltproject.io/salt/install-guide/en/latest/topics/accept-keys.html#accept-keys
+
+- Verify a Salt install https://docs.saltproject.io/salt/install-guide/en/latest/topics/verify-install.html#verify-install
+
+- Install dependencies https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-dependencies.html#install-dependencies
+
 ## Starting Salt
 
 Salt functions on a master/minion topology. A master server acts as a
