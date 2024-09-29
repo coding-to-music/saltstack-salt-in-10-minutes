@@ -155,7 +155,7 @@ After installing Salt on your operating system, you need to complete the followi
 
 - Configure the Salt master and minions https://docs.saltproject.io/salt/install-guide/en/latest/topics/configure-master-minion.html#configure-master-minion
 
-View the full 1300 line default conf file `code /etc/salt/master` with almost everything commented out
+View the full 1300 line default conf file `/etc/salt/master` with almost everything commented out
 
 more `code /etc/salt/master`
 
