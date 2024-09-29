@@ -83,6 +83,14 @@ As said in the official page, use:
 lsb_release -a
 ```
 
+```bash
+No LSB modules are available.
+Distributor ID: Ubuntu
+Description:    Ubuntu 20.04.6 LTS
+Release:        20.04
+Codename:       focal
+```
+
 Your version appears on the "Description" line.
 
 https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-operating-system/ubuntu.html#install-salt-on-ubuntu-20-04-focal-amd64
@@ -119,7 +127,22 @@ sudo systemctl enable salt-master && sudo systemctl start salt-master
 sudo systemctl enable salt-minion && sudo systemctl start salt-minion
 sudo systemctl enable salt-syndic && sudo systemctl start salt-syndic
 sudo systemctl enable salt-api && sudo systemctl start salt-api
+```
 
+#### Check the status of what is running
+
+```java
+docker ps
+
+sudo systemctl status
+
+sudo systemctl status salt-master salt-minion salt-syndic salt-api
+
+sudo systemctl list-units
+
+sudo systemctl list-units --state=degraded
+
+sudo systemctl list-units --state=failed
 ```
 
 Note
@@ -131,6 +154,111 @@ After installing a onedir verison of Salt, your system has both a global version
 After installing Salt on your operating system, you need to complete the following post-installation steps:
 
 - Configure the Salt master and minions https://docs.saltproject.io/salt/install-guide/en/latest/topics/configure-master-minion.html#configure-master-minion
+
+View the full 1300 line default conf file `code /etc/salt/master` with almost everything commented out
+
+more `code /etc/salt/master`
+
+Instead put a minimal conf file into `/etc/salt/master.d/network.conf`
+
+sudo vi `/etc/salt/master.d/network.conf`
+
+Find your ip address
+
+```bash
+hostname -i
+```
+
+Example Output
+
+```bash
+192.168.1.10 10.0.0.5
+```
+
+In this example, if `192.168.1.10` is your primary IP address, you would use that in your `/etc/salt/master.d/network.conf` file.
+
+If you’re unsure which IP address to use, you can check your network interfaces with:
+
+```bash
+ip addr
+```
+
+Alternatively, you can use SaltStack itself to get the hostname by running:
+
+```bash
+salt '*' network.get_hostname
+```
+
+If you need to set or modify the hostname, you can use:
+
+```bash
+salt '*' network.mod_hostname <new_hostname>
+```
+
+```bash
+# The network interface to bind to
+interface: 192.0.2.20 -- example address
+
+# The Request/Reply port
+ret_port: 4506
+
+# The port minions bind to for commands, aka the publish port
+publish_port: 4505
+```
+
+This will show you if the Salt master is listening on port 4505 (the default port for Salt master).
+
+### Once you’ve set the value in your /etc/salt/master.d/network.conf file, you’ll need to restart the Salt master service to apply the changes. You can do this with the following command:
+
+```bash
+sudo systemctl restart salt-master
+```
+
+After restarting, you can check the status of the Salt master to ensure it’s running correctly:
+
+```bash
+sudo systemctl status salt-master
+
+or
+
+sudo service salt-master status
+```
+
+### To validate that your Salt master is correctly using the new configuration, you can follow these steps:
+
+1. Check the Salt Master Logs: Look at the Salt master logs to see if there are any errors or warnings related to the network configuration. You can view the logs with:
+
+```bash
+sudo journalctl -u salt-master -f
+```
+
+2. Verify the Listening IP Address: Ensure that the Salt master is listening on the correct IP address. You can use the netstat or ss command to check this:
+
+```bash
+sudo netstat -tuln | grep 4505
+
+or
+
+sudo ss -tuln | grep 4505
+```
+
+3. Test Communication with a Minion: Try to ping a Salt minion from the master to ensure communication is working:
+
+```bash
+sudo salt '*' test.ping
+```
+
+If the minions respond with True, it means they can communicate with the master.
+
+4. Check the Master Configuration: You can also check the effective configuration of the Salt master to ensure your changes are applied. Run:
+
+```bash
+sudo salt-master --versions-report
+```
+
+This will show you the current configuration and versions of the Salt master.
+
+## more
 
 - Start the master and minion services https://docs.saltproject.io/salt/install-guide/en/latest/topics/start-salt-services.html#start-salt-services
 
