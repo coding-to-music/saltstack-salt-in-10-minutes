@@ -151,6 +151,18 @@ When you install a onedir version of Salt (3006 and later), Salt installs its ow
 
 After installing a onedir verison of Salt, your system has both a global version of Python at the system level and a local version of Python used by Salt. This architecture change means that the Salt onedir paths for Python are different and you need to change how you install third-party Python dependencies that you use with Salt, including your state files. See Install dependencies for more information.
 
+#### should I edit /etc/salt/minion or instead minion.d/\*.conf ?
+
+You can use either approach, but it’s generally recommended to use the minion.d/\*.conf directory for custom configurations. This way, you can keep your configurations modular and organized. Here’s how you can proceed:
+
+Create a new configuration file in the `/etc/salt/minion.d/` directory, for example, `/etc/salt/minion.d/custom.conf`
+
+Add your custom configurations in this file. For instance:
+
+```bash
+master: <master_ip_address>
+```
+
 After installing Salt on your operating system, you need to complete the following post-installation steps:
 
 - Configure the Salt master and minions https://docs.saltproject.io/salt/install-guide/en/latest/topics/configure-master-minion.html#configure-master-minion
@@ -214,10 +226,22 @@ This will show you if the Salt master is listening on port 4505 (the default por
 sudo systemctl restart salt-master
 ```
 
+and
+
+```bash
+sudo systemctl restart salt-minion
+```
+
 After restarting, you can check the status of the Salt master to ensure it’s running correctly:
 
 ```bash
 sudo systemctl status salt-master
+```
+
+and
+
+```bash
+sudo systemctl status salt-minion
 ```
 
 or
@@ -238,9 +262,11 @@ sudo journalctl -u salt-master -f
 
 ```bash
 sudo netstat -tuln | grep 4505
+```
 
 or
 
+```bash
 sudo ss -tuln | grep 4505
 ```
 
