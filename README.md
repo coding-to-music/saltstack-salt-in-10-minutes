@@ -218,9 +218,11 @@ After restarting, you can check the status of the Salt master to ensure it’s r
 
 ```bash
 sudo systemctl status salt-master
+```
 
 or
 
+```bash
 sudo service salt-master status
 ```
 
