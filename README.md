@@ -73,6 +73,14 @@ https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-opera
 sudo apt-get update
 ```
 
+### Add the SaltStack Repository
+
+First, add the SaltStack repository to your system:
+
+```bash
+sudo add-apt-repository ppa:saltstack/salt
+```
+
 ### How do I check the version of Ubuntu I am running
 
 http://askubuntu.com/questions/686239/ddg#686249
@@ -150,6 +158,52 @@ Note
 When you install a onedir version of Salt (3006 and later), Salt installs its own local version of Python and the dependencies needed for the core functionality of Salt.
 
 After installing a onedir verison of Salt, your system has both a global version of Python at the system level and a local version of Python used by Salt. This architecture change means that the Salt onedir paths for Python are different and you need to change how you install third-party Python dependencies that you use with Salt, including your state files. See Install dependencies for more information.
+
+## configure the Salt minion to connect to the same machine where the Salt master is running
+
+To configure the Salt minion to connect to the same machine where the Salt master is running, you can set the master value to `localhost` or `127.0.0.1` in the minion configuration file. Here’s how you can do it:
+
+Open the Minion Configuration File:
+
+```bash
+sudo nano /etc/salt/minion
+```
+
+Set the Master Value: Find the line that starts with #master: and update it to point to localhost or 127.0.0.1:
+
+```bash
+master: localhost
+```
+
+Save and Exit: Save the changes and exit the editor (in Nano, you can do this by pressing Ctrl+O to save and Ctrl+X to exit).
+Here’s an example of what the relevant part of your /etc/salt/minion file might look like:
+
+# Set the master address
+
+```bash
+master: localhost
+```
+
+Restart the Minion Service: After making these changes, restart the minion service to apply the new configuration:
+
+```bash
+sudo systemctl restart salt-minion
+```
+
+Check the Status: Verify that the minion is running and connected to the master:
+
+```bash
+sudo systemctl status salt-minion
+```
+
+List and Accept the Minion Key: Check if the minion key appears under “Unaccepted Keys” and accept it:
+
+```bash
+sudo salt-key -L
+sudo salt-key -A
+```
+
+This setup ensures that the minion connects to the master running on the same machine
 
 #### should I edit /etc/salt/minion or instead minion.d/\*.conf ?
 
