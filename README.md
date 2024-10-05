@@ -254,6 +254,11 @@ sudo systemctl restart salt-master
 sudo systemctl restart salt-minion
 ```
 
+```bash
+sudo systemctl status salt-master
+sudo systemctl status salt-minion
+```
+
 Check Logs for Errors: Look at the logs on both the master and minion for any error messages that might provide more insight:
 
 ```bash
@@ -266,6 +271,88 @@ Firewall on Minions: If the minions have their own firewalls, ensure that they a
 ```bash
 sudo ufw allow out to <master-ip> port 4505
 sudo ufw allow out to <master-ip> port 4506
+```
+
+#### Check Permissions:
+
+Ensure that the Salt Minion has the necessary permissions to write to the log file and create directories. You can adjust the permissions using the following commands:
+
+```bash
+sudo chown -R salt:salt /var/log/salt
+sudo chown -R salt:salt /etc/salt/pki
+```
+
+#### Verify Configuration:
+
+Make sure the configuration files are correctly set up and that there are no syntax errors. You can check the configuration with:
+
+```bash
+sudo salt-minion --config-dir=/etc/salt -l debug
+```
+
+#### Run in Foreground:
+
+Running the Salt Minion in the foreground can provide more detailed error messages:
+
+```bash
+sudo salt-minion -l debug
+```
+
+It seems like the Salt Minion is having trouble authenticating with the Salt Master due to a cached public key issue. Here are some steps to resolve this:
+
+#### Clear Cached Keys:
+
+On the Salt Master, delete the cached public key for the minion:
+
+```bash
+sudo salt-key -d <minion_id>
+```
+
+#### Verify that the key has been deleted:
+
+```bash
+sudo salt-key -L
+```
+
+#### Restart the Minion:
+
+On the Minion, restart the Salt Minion service to generate a new key pair:
+
+```bash
+sudo systemctl restart salt-minion
+```
+
+#### Accept the New Key:
+
+On the Salt Master, accept the new key from the minion:
+
+```bash
+sudo salt-key -A
+```
+
+#### Check Firewall Settings:
+
+Ensure that the necessary ports (4505 and 4506) are open on both the master and minion. You can check port connectivity using nc:
+
+```bash
+nc -v -z <master_ip> 4505
+nc -v -z <master_ip> 4506
+```
+
+#### Verify Configuration:
+
+Ensure that the master and minion configurations are correct. The minion configuration file (/etc/salt/minion) should have the correct master IP address:
+
+```bash
+master: <master_ip>
+```
+
+#### Run in Debug Mode:
+
+Running the minion in debug mode can provide more detailed error messages:
+
+```bash
+sudo salt-minion -l debug
 ```
 
 ## configure the Salt minion to connect to the same machine where the Salt master is running
