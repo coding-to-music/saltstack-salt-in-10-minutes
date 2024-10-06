@@ -262,8 +262,8 @@ sudo systemctl status salt-minion
 Check Logs for Errors: Look at the logs on both the master and minion for any error messages that might provide more insight:
 
 ```bash
-sudo tail -f /var/log/salt/master
-sudo tail -f /var/log/salt/minion
+sudo tail -n 50 -f /var/log/salt/master
+sudo tail -n 50 -f /var/log/salt/minion
 ```
 
 Firewall on Minions: If the minions have their own firewalls, ensure that they allow outgoing connections to ports 4505 and 4506:
