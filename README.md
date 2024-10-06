@@ -206,7 +206,44 @@ sudo systemctl status ufw
 ```
 
 If it is not enabled, you can enable it with:
+
+```bash
 sudo systemctl enable ufw
+```
+
+## Allow SSH through UFW:
+
+Open a terminal on the server.
+
+Run the following command to allow SSH connections:
+
+```bash
+sudo ufw allow ssh
+```
+
+Alternatively, you can specify the port number directly:
+
+```bash
+sudo ufw allow 22/tcp
+```
+
+Verify UFW status:
+
+Check the status of UFW to ensure the rule has been applied:
+
+```bash
+sudo ufw status
+```
+
+You should see a line indicating that port 22 (SSH) is allowed.
+
+Reload UFW (if necessary):
+
+If the changes don’t take effect immediately, you can reload UFW:
+
+```bash
+sudo ufw reload
+```
 
 #### Configure Default Policies: It’s a good practice to set default policies to deny all incoming connections and allow all outgoing connections:
 
