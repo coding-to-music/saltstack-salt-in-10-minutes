@@ -146,6 +146,8 @@ sudo systemctl status
 
 sudo systemctl status salt-master salt-minion salt-syndic salt-api
 
+sudo systemctl status salt-minion
+
 sudo systemctl list-units
 
 sudo systemctl list-units --state=degraded
