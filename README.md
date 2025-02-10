@@ -67,7 +67,19 @@ SaltStack has been made to be very easy to install and get started. The
 `Salt install guide <https://docs.saltproject.io/salt/install-guide/en/latest/>`\_
 provides instructions for all supported platforms.
 
+IMPORTANT ANNOUNCEMENT:
+
+- repo.saltproject.io has migrated to packages.broadcom.com!
+- Click here for latest update (2024-11-22)
+- https://saltproject.io/blog/post-migration-salt-project-faqs/
+
+This URL no longer works:
+
 https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-operating-system/ubuntu.html
+
+This URL works:
+
+https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-operating-system/linux-deb.html
 
 ```bash
 sudo apt-get update
@@ -78,7 +90,91 @@ sudo apt-get update
 First, add the SaltStack repository to your system:
 
 ```bash
+# this did not work
 sudo add-apt-repository ppa:saltstack/salt
+```
+
+Output
+
+```java
+sudo add-apt-repository ppa:saltstack/salt
+
+Repository: 'Types: deb
+URIs: https://ppa.launchpadcontent.net/saltstack/salt/ubuntu/
+Suites: noble
+Components: main
+'
+Description:
+Salt, the remote execution and configuration management tool.
+More info: https://launchpad.net/~saltstack/+archive/ubuntu/salt
+Adding repository.
+Press [ENTER] to continue or Ctrl-c to cancel.
+Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:4 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Ign:5 https://ppa.launchpadcontent.net/saltstack/salt/ubuntu noble InRelease
+Err:6 https://ppa.launchpadcontent.net/saltstack/salt/ubuntu noble Release
+  404  Not Found [IP: 2620:2d:4000:1::81 443]
+Reading package lists... Done
+E: The repository 'https://ppa.launchpadcontent.net/saltstack/salt/ubuntu noble Release' does not have a Release file.
+N: Updating from such a repository can't be done securely, and is therefore disabled by default.
+N: See apt-secure(8) manpage for repository creation and user configuration details.
+```
+
+Needed to remove the launchpad stuff via:
+
+```java
+sudo add-apt-repository --remove ppa:saltstack/salt
+```
+
+## Install Salt DEBs
+
+https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-operating-system/linux-deb.html
+
+1. Run the following command to install the Salt Project repository:
+
+```java
+# Ensure keyrings dir exists
+
+mkdir -p /etc/apt/keyrings
+
+# Download public key
+
+curl -fsSL https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public | sudo tee /etc/apt/keyrings/salt-archive-keyring.pgp
+
+# Create apt repo target configuration
+
+curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.sources | sudo tee /etc/apt/sources.list.d/salt.sources
+```
+
+2. Run `sudo apt update` to update metadata.
+
+```java
+sudo apt update
+```
+
+3. Install the salt-minion, salt-master, or other Salt components:
+
+### 3006 LTS
+
+Populate `/etc/apt/preferences.d/salt-pin-1001` in order to restrict upgrades to Salt `3006.x LTS`:
+
+```java
+echo 'Package: salt-*
+Pin: version 3006.*
+Pin-Priority: 1001' | sudo tee /etc/apt/preferences.d/salt-pin-1001
+```
+
+Available installs:
+
+```java
+sudo apt-get install salt-master
+sudo apt-get install salt-minion
+sudo apt-get install salt-ssh
+sudo apt-get install salt-syndic
+sudo apt-get install salt-cloud
+sudo apt-get install salt-api
 ```
 
 ### How do I check the version of Ubuntu I am running
