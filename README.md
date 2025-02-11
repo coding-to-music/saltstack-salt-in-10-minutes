@@ -269,7 +269,9 @@ echo "d /var/run/salt 0755 salt salt -" | sudo tee /etc/tmpfiles.d/salt.conf
 
 May need to ensure content of: `/etc/systemd/system/salt-minion.service.d/override.conf`
 
+```java
 sudo cat /etc/systemd/system/salt-minion.service.d/override.conf
+```
 
 Should look like this:
 
@@ -908,14 +910,14 @@ The `salt-key` command is used to manage all of the keys on the
 master. To list the keys that are on the master:
 
 ```bash
-    salt-key -L
+salt-key -L
 ```
 
 The keys that have been rejected, accepted, and pending acceptance are listed.
 The easiest way to accept the minion key is to accept all pending keys:
 
 ```bash
-    salt-key -A
+salt-key -A
 ```
 
 ```
