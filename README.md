@@ -236,7 +236,10 @@ sudo systemctl enable salt-api && sudo systemctl start salt-api
 May need to do this to set the ownership and permissions
 
 ```java
-sudo usermod -aG root salt
+sudo apt-get update
+sudo apt-get upgrade salt-master salt-minion
+
+sudo usermod -aG root,salt salt
 
 sudo chown -R salt:salt /etc/salt
 sudo chmod -R 755 /etc/salt
@@ -262,6 +265,17 @@ sudo chmod -R 755 /var/cache/salt/minion
 sudo mkdir -p /var/cache/salt/minion/schedule
 sudo chown -R salt:salt /var/cache/salt/minion/schedule
 sudo chmod -R 755 /var/cache/salt/minion/schedule
+
+sudo chown -R salt:salt /etc/salt
+sudo chown -R salt:salt /var/cache/salt
+sudo chown -R salt:salt /var/log/salt
+sudo chown -R salt:salt /var/run/salt
+
+sudo chmod -R 755 /etc/salt
+sudo chmod -R 755 /var/cache/salt
+sudo chmod -R 755 /var/log/salt
+sudo chmod -R 755 /var/run/salt
+
 ```
 
 May need to ensure content of: `/etc/tmpfiles.d/salt.conf`
@@ -1018,7 +1032,7 @@ A simple command to
 start with looks like this:
 
 ```bash
-    salt '*' test.version
+salt '*' test.version
 ```
 
 The `*` is the target, which specifies all minions.
@@ -1054,7 +1068,7 @@ Of course, there are hundreds of other modules that can be called just as
 targeted minions:
 
 ```bash
-    salt '*' disk.usage
+salt '*' disk.usage
 ```
 
 ### Getting to Know the Functions
@@ -1064,7 +1078,7 @@ functions are self-documenting. To see what functions are available on the
 minions execute the :py:func:`sys.doc <salt.modules.sys.doc>` function:
 
 ```bash
-    salt '*' sys.doc
+salt '*' sys.doc
 ```
 
 This will display a very large list of available functions and documentation on
@@ -1091,7 +1105,7 @@ functions to shell out on minions, such as :mod:`cmd.run
 <salt.modules.cmdmod.run_all>`:
 
 ```bash
-    salt '*' cmd.run 'ls -l /etc'
+salt '*' cmd.run 'ls -l /etc'
 ```
 
 The `pkg` functions automatically map local system package managers to the
@@ -1099,7 +1113,7 @@ same salt functions. This means that `pkg.install` will install packages via
 `yum` on Red Hat based systems, `apt` on Debian systems, etc.:
 
 ```bash
-    salt '*' pkg.install vim
+salt '*' pkg.install vim
 ```
 
 ```
@@ -1114,7 +1128,7 @@ addresses, etc:
 ```
 
 ```bash
-    salt '*' network.interfaces
+salt '*' network.interfaces
 ```
 
 ### Changing the Output Format
@@ -1214,7 +1228,7 @@ Many of the functions available accept arguments which can be passed in on
 the command line:
 
 ```bash
-    salt '*' pkg.install vim
+salt '*' pkg.install vim
 ```
 
 This example passes the argument `vim` to the pkg.install function. Since
@@ -1223,7 +1237,7 @@ are parsed through YAML, allowing for more complex data to be sent on the
 command line:
 
 ```bash
-    salt '*' test.echo 'foo: bar'
+salt '*' test.echo 'foo: bar'
 ```
 
 In this case Salt translates the string 'foo: bar' into the dictionary
@@ -1277,7 +1291,7 @@ vim: pkg.installed
 Now install vim on the minions by calling the SLS directly:
 
 ```bash
-    salt '*' state.apply vim
+salt '*' state.apply vim
 ```
 
 This command will invoke the state system and run the `vim` SLS.
@@ -1352,7 +1366,7 @@ named `init.sls` it inherits the name of the directory path that contains it.
 This formula can be referenced via the following command:
 
 ```bash
-    salt '*' state.apply nginx
+salt '*' state.apply nginx
 ```
 
 ```
