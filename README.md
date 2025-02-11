@@ -236,6 +236,11 @@ sudo systemctl enable salt-api && sudo systemctl start salt-api
 May need to do this to set the ownership and permissions
 
 ```java
+sudo usermod -aG root salt
+
+sudo chown -R salt:salt /etc/salt
+sudo chmod -R 755 /etc/salt
+
 sudo chown -R salt:salt /var/run/salt
 sudo chmod -R 755 /var/run/salt
 
@@ -257,8 +262,6 @@ sudo chmod -R 755 /var/cache/salt/minion
 sudo mkdir -p /var/cache/salt/minion/schedule
 sudo chown -R salt:salt /var/cache/salt/minion/schedule
 sudo chmod -R 755 /var/cache/salt/minion/schedule
-
-sudo usermod -aG root salt
 ```
 
 May need to ensure content of: `/etc/tmpfiles.d/salt.conf`
@@ -287,6 +290,56 @@ Manually create the PID file with the correct permissions:
 sudo touch /var/run/process_responsibility_salt-minion.pid
 sudo chown salt:salt /var/run/process_responsibility_salt-minion.pid
 sudo chmod 644 /var/run/process_responsibility_salt-minion.pid
+```
+
+Replace `/etc/salt/master` with this minimal file:
+
+```java
+user: salt
+
+# Set the interface the Salt Master should listen on (change to the appropriate IP address if needed)
+interface: 0.0.0.0
+
+# Enable logging for the Salt Master
+log_level: warning
+log_file: /var/log/salt/master
+
+# Directory to store the keys
+pki_dir: /etc/salt/pki/master
+
+# Directory to store cached data
+cachedir: /var/cache/salt/master
+
+# Auto-accepting keys is optional; be cautious with this in production
+auto_accept: False
+
+# Fileserver settings
+fileserver_backend:
+  - roots
+
+file_roots:
+  base:
+    - /srv/salt
+```
+
+Back Up Existing Configuration:
+
+```java
+sudo cp /etc/salt/master /etc/salt/master.bak
+```
+
+Edit the Configuration:
+
+```java
+sudo nano /etc/salt/master
+```
+
+Replace the Contents: Replace the current contents with the minimal configuration provided above.
+
+Restart Salt Master Service:
+
+```java
+sudo systemctl restart salt-master
 ```
 
 Manually restart both the salt master and minion
