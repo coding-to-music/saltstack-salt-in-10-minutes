@@ -233,6 +233,86 @@ sudo systemctl enable salt-syndic && sudo systemctl start salt-syndic
 sudo systemctl enable salt-api && sudo systemctl start salt-api
 ```
 
+May need to do this to set the ownership and permissions
+
+```java
+sudo chown -R salt:salt /var/run/salt
+sudo chmod -R 755 /var/run/salt
+
+sudo chown -R salt:salt /etc/salt/pki/minion
+sudo chmod -R 755 /etc/salt/pki/minion
+
+sudo chown -R salt:salt /var/cache/salt/minion
+sudo chmod -R 755 /var/cache/salt/minion
+
+sudo mkdir -p /var/cache/salt/minion/proc
+sudo chown -R salt:salt /var/cache/salt/minion/proc
+sudo chmod -R 755 /var/cache/salt/minion/proc
+
+sudo chown -R salt:salt /var/log/salt
+sudo chmod -R 755 /var/log/salt
+
+sudo chown -R salt:salt /var/cache/salt/minion
+sudo chmod -R 755 /var/cache/salt/minion
+sudo mkdir -p /var/cache/salt/minion/schedule
+sudo chown -R salt:salt /var/cache/salt/minion/schedule
+sudo chmod -R 755 /var/cache/salt/minion/schedule
+
+sudo usermod -aG root salt
+```
+
+May need to ensure content of: `/etc/tmpfiles.d/salt.conf`
+
+```java
+echo "d /var/run/salt 0755 salt salt -" | sudo tee /etc/tmpfiles.d/salt.conf
+```
+
+May need to ensure content of: `/etc/systemd/system/salt-minion.service.d/override.conf`
+
+sudo cat /etc/systemd/system/salt-minion.service.d/override.conf
+
+Should look like this:
+
+```java
+[Service]
+User=salt
+Group=salt
+```
+
+Manually create the PID file with the correct permissions:
+
+```java
+sudo touch /var/run/process_responsibility_salt-minion.pid
+sudo chown salt:salt /var/run/process_responsibility_salt-minion.pid
+sudo chmod 644 /var/run/process_responsibility_salt-minion.pid
+```
+
+Manually restart both the salt master and minion
+
+```java
+sudo systemctl restart salt-master
+sudo systemctl restart salt-minion
+```
+
+Check the status of the salt master and minion
+
+```java
+sudo systemctl status salt-master
+sudo systemctl status salt-minion
+```
+
+Check the logs on the Salt Master
+
+```java
+sudo journalctl -u salt-master
+```
+
+Check the logs on the Salt Minions
+
+```java
+sudo journalctl -u salt-minion
+```
+
 #### Check the status of what is running
 
 ```java
