@@ -306,6 +306,36 @@ sudo chown salt:salt /var/run/process_responsibility_salt-minion.pid
 sudo chmod 644 /var/run/process_responsibility_salt-minion.pid
 ```
 
+Simple minimal salt-master config
+
+https://docs.saltproject.io/salt/install-guide/en/latest/topics/configure-master-minion.html#configure-master-minion
+
+```java
+sudo nano /etc/salt/master.d/network.conf
+```
+
+The network interface to bind to (use the ip_address of the master)
+
+```java
+interface: 192.0.2.20
+```
+
+### Connecting to the Salt master
+
+By default, the minions assume that the Salt master can be resolved in DNS using the hostname salt.
+
+An example that overrides the master default setting:
+
+```java
+sudo nano /etc/salt/minion.d/master.conf
+```
+
+```java
+master: 192.0.2.20
+```
+
+Another option:
+
 Replace `/etc/salt/master` with this minimal file:
 
 ```java
@@ -398,6 +428,8 @@ sudo systemctl list-units
 sudo systemctl list-units --state=degraded
 
 sudo systemctl list-units --state=failed
+
+salt-key
 ```
 
 Note
@@ -604,6 +636,12 @@ On the Minion, restart the Salt Minion service to generate a new key pair:
 
 ```bash
 sudo systemctl restart salt-minion
+```
+
+See what keys are proposed
+
+```java
+sudo salt-key
 ```
 
 #### Accept the New Key:
