@@ -73,12 +73,6 @@ IMPORTANT ANNOUNCEMENT:
 - Click here for latest update (2024-11-22)
 - https://saltproject.io/blog/post-migration-salt-project-faqs/
 
-This URL no longer works:
-
-https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-operating-system/ubuntu.html
-
-This URL works:
-
 https://docs.saltproject.io/salt/install-guide/en/latest/topics/install-by-operating-system/linux-deb.html
 
 ```bash
@@ -88,45 +82,6 @@ sudo apt-get update
 ### Add the SaltStack Repository
 
 First, add the SaltStack repository to your system:
-
-```bash
-# this did not work
-sudo add-apt-repository ppa:saltstack/salt
-```
-
-Output
-
-```java
-sudo add-apt-repository ppa:saltstack/salt
-
-Repository: 'Types: deb
-URIs: https://ppa.launchpadcontent.net/saltstack/salt/ubuntu/
-Suites: noble
-Components: main
-'
-Description:
-Salt, the remote execution and configuration management tool.
-More info: https://launchpad.net/~saltstack/+archive/ubuntu/salt
-Adding repository.
-Press [ENTER] to continue or Ctrl-c to cancel.
-Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
-Hit:2 http://archive.ubuntu.com/ubuntu noble InRelease
-Hit:3 http://archive.ubuntu.com/ubuntu noble-updates InRelease
-Hit:4 http://archive.ubuntu.com/ubuntu noble-backports InRelease
-Ign:5 https://ppa.launchpadcontent.net/saltstack/salt/ubuntu noble InRelease
-Err:6 https://ppa.launchpadcontent.net/saltstack/salt/ubuntu noble Release
-  404  Not Found [IP: 2620:2d:4000:1::81 443]
-Reading package lists... Done
-E: The repository 'https://ppa.launchpadcontent.net/saltstack/salt/ubuntu noble Release' does not have a Release file.
-N: Updating from such a repository can't be done securely, and is therefore disabled by default.
-N: See apt-secure(8) manpage for repository creation and user configuration details.
-```
-
-Needed to remove the launchpad stuff via:
-
-```java
-sudo add-apt-repository --remove ppa:saltstack/salt
-```
 
 ## Install Salt DEBs
 
@@ -386,6 +341,51 @@ Restart Salt Master Service:
 sudo systemctl restart salt-master
 ```
 
+view lines that do not begin with # and are not blank lines
+
+```java
+grep -v -e '^#' -e '^$' /etc/salt/master
+grep -v -e '^#' -e '^$' /etc/salt/minion
+```
+
+Update the hosts file to know that the master server is also called salt
+
+```java
+sudo nano /etc/hosts
+```
+
+```java
+<master_ip_address> salt
+```
+
+Manually restart both the salt master and minion
+
+```java
+sudo systemctl restart salt-master
+sudo systemctl restart salt-minion
+```
+
+Check the status of the salt master and minion
+
+```java
+sudo systemctl status salt-master
+sudo systemctl status salt-minion
+```
+
+Accept the key if needed for the master and minion to be able to communicate
+
+list to view the status of the keys
+
+```java
+salt-key -L
+```
+
+Accept the key if needed
+
+```java
+salt-key -A
+```
+
 Manually restart both the salt master and minion
 
 ```java
@@ -403,13 +403,17 @@ sudo systemctl status salt-minion
 Check the logs on the Salt Master
 
 ```java
-sudo journalctl -u salt-master
+sudo journalctl -u salt-master.service -n 10
+
+sudo journalctl -xeu salt-master.service
 ```
 
 Check the logs on the Salt Minions
 
 ```java
-sudo journalctl -u salt-minion
+sudo journalctl -u salt-minion.service -n 10
+
+sudo journalctl -xeu salt-minion.service
 ```
 
 #### Check the status of what is running
@@ -428,8 +432,6 @@ sudo systemctl list-units
 sudo systemctl list-units --state=degraded
 
 sudo systemctl list-units --state=failed
-
-salt-key
 ```
 
 Note
