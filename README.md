@@ -293,6 +293,20 @@ Another option:
 
 Replace `/etc/salt/master` with this minimal file:
 
+Back Up Existing Configuration:
+
+```java
+sudo mv /etc/salt/master /etc/salt/master.bak.$(date +"%Y%m%d%H%M%S")
+```
+
+Edit the Configuration:
+
+```java
+sudo nano /etc/salt/master
+```
+
+Replace the Contents: Replace the current contents with the minimal configuration provided below.
+
 ```java
 user: salt
 
@@ -320,20 +334,6 @@ file_roots:
   base:
     - /srv/salt
 ```
-
-Back Up Existing Configuration:
-
-```java
-sudo cp /etc/salt/master /etc/salt/master.bak
-```
-
-Edit the Configuration:
-
-```java
-sudo nano /etc/salt/master
-```
-
-Replace the Contents: Replace the current contents with the minimal configuration provided above.
 
 Restart Salt Master Service:
 
@@ -370,6 +370,12 @@ Check the status of the salt master and minion
 ```java
 sudo systemctl status salt-master
 sudo systemctl status salt-minion
+
+sudo journalctl -u salt-minion.service -n 10
+sudo journalctl -u salt-master.service -n 10
+
+sudo journalctl -xeu salt-minion.service
+sudo journalctl -xeu salt-master.service
 ```
 
 Accept the key if needed for the master and minion to be able to communicate
