@@ -422,6 +422,634 @@ sudo journalctl -u salt-minion.service -n 10
 sudo journalctl -xeu salt-minion.service
 ```
 
+```java
+pkill salt-master
+salt-master -d
+```
+
+Output
+```java
+The salt master is shutdown. The ports are not available to bind
+```
+
+#### Verify what the salt master config has for settings
+
+view all lines that actually contain settings (ie no blanks or commented out with #)
+
+```java
+grep -v -e '^#' -e '^$' /etc/salt/master
+```
+
+```java
+user: salt
+interface: 0.0.0.0
+log_level: warning
+log_file: /var/log/salt/master
+pki_dir: /etc/salt/pki/master
+cachedir: /var/cache/salt/master
+auto_accept: False
+fileserver_backend:
+  - roots
+file_roots:
+  base:
+    - /srv/salt
+```
+
+#### Check the status of the firewall
+
+```java
+ufw numbered
+```
+
+Output
+
+```java
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22                         ALLOW       Anywhere                  
+4505                       ALLOW       Anywhere                  
+4506                       ALLOW       Anywhere                  
+22/tcp                     ALLOW       Anywhere                  
+22 (v6)                    ALLOW       Anywhere (v6)             
+4505 (v6)                  ALLOW       Anywhere (v6)             
+4506 (v6)                  ALLOW       Anywhere (v6)             
+22/tcp (v6)                ALLOW       Anywhere (v6) 
+```
+
+### check the port usage
+
+```java
+sudo netstat -tuln | grep ':450[56]'
+```
+
+```java
+tcp        0      0 0.0.0.0:4505            0.0.0.0:*               LISTEN     
+tcp        0      0 0.0.0.0:4506            0.0.0.0:*               LISTEN
+```
+
+### Test Communication with a Minion: Try to ping a Salt minion from the master to ensure communication is working:
+
+```bash
+sudo salt '*' test.ping
+```
+
+If the minions respond with True, it means they can communicate with the master.
+
+## States tutorial, part 1 - Basic Usage
+
+https://docs.saltproject.io/en/3006/topics/tutorials/states_pt1.html#states-tutorial
+
+
+Setting up the Salt State Tree
+States are stored in text files on the master and transferred to the minions on demand via the master's File Server. The collection of state files make up the State Tree.
+
+To start using a central state system in Salt, the Salt File Server must first be set up. Edit the master config file (file_roots) and uncomment the following lines:
+
+file_roots:
+  base:
+    - /srv/salt
+Note
+
+If you are deploying on FreeBSD via ports, the file_roots path defaults to /usr/local/etc/salt/states.
+
+Restart the Salt master in order to pick up this change:
+
+pkill salt-master
+salt-master -d
+Preparing the Top File
+On the master, in the directory uncommented in the previous step, (/srv/salt by default), create a new file called top.sls and add the following:
+
+base:
+  '*':
+    - webserver
+The top file is separated into environments (discussed later). The default environment is base. Under the base environment a collection of minion matches is defined; for now simply specify all hosts (*).
+
+Targeting minions
+
+The expressions can use any of the targeting mechanisms used by Salt — minions can be matched by glob, PCRE regular expression, or by grains. For example:
+
+base:
+  'os:Fedora':
+    - match: grain
+    - webserver
+Create an sls file
+In the same directory as the top file, create a file named webserver.sls, containing the following:
+
+apache:                 # ID declaration
+  pkg:                  # state declaration
+    - installed         # function declaration
+The first line, called the ID declaration, is an arbitrary identifier. In this case it defines the name of the package to be installed.
+
+Note
+
+The package name for the Apache httpd web server may differ depending on OS or distro — for example, on Fedora it is httpd but on Debian/Ubuntu it is apache2.
+
+The second line, called the State declaration, defines which of the Salt States we are using. In this example, we are using the pkg state to ensure that a given package is installed.
+
+The third line, called the Function declaration, defines which function in the pkg state module to call.
+
+Renderers
+
+States sls files can be written in many formats. Salt requires only a simple data structure and is not concerned with how that data structure is built. Templating languages and DSLs are a dime-a-dozen and everyone has a favorite.
+
+Building the expected data structure is the job of Salt Renderers and they are dead-simple to write.
+
+In this tutorial we will be using YAML in Jinja2 templates, which is the default format. The default can be changed by editing renderer in the master configuration file.
+
+Install the package
+Next, let's run the state we created. Open a terminal on the master and run:
+
+salt '*' state.apply
+Our master is instructing all targeted minions to run state.apply. When this function is executed without any SLS targets, a minion will download the top file and attempt to match the expressions within it. When the minion does match an expression the modules listed for it will be downloaded, compiled, and executed.
+
+Note
+
+This action is referred to as a "highstate", and can be run using the state.highstate function. However, to make the usage easier to understand ("highstate" is not necessarily an intuitive name), a state.apply function was added in version 2015.5.0, which when invoked without any SLS names will trigger a highstate. state.highstate still exists and can be used, but the documentation (as can be seen above) has been updated to reference state.apply, so keep the following in mind as you read the documentation:
+
+state.apply invoked without any SLS names will run state.highstate
+
+state.apply invoked with SLS names will run state.sls
+
+Once completed, the minion will report back with a summary of all actions taken and all changes made.
+
+Warning
+
+If you have created custom grain modules, they will not be available in the top file until after the first highstate. To make custom grains available on a minion's first highstate, it is recommended to use this example to ensure that the custom grains are synced when the minion starts.
+
+SLS File Namespace
+
+Note that in the example above, the SLS file webserver.sls was referred to simply as webserver. The namespace for SLS files when referenced in top.sls or an Include declaration follows a few simple rules:
+
+The .sls is discarded (i.e. webserver.sls becomes webserver).
+
+Subdirectories can be used for better organization.
+Each subdirectory under the configured file_roots (default: /srv/salt/) is represented with a dot (following the Python import model) in Salt states and on the command line. webserver/dev.sls on the filesystem is referred to as webserver.dev in Salt
+
+Because slashes are represented as dots, SLS files can not contain dots in the name (other than the dot for the SLS suffix). The SLS file webserver_1.0.sls can not be matched, and webserver_1.0 would match the directory/file webserver_1/0.sls
+
+A file called init.sls in a subdirectory is referred to by the path of the directory. So, webserver/init.sls is referred to as webserver.
+
+If both webserver.sls and webserver/init.sls happen to exist, webserver/init.sls will be ignored and webserver.sls will be the file referred to as webserver.
+
+Troubleshooting Salt
+
+If the expected output isn't seen, the following tips can help to narrow down the problem.
+
+Turn up logging
+Salt can be quite chatty when you change the logging setting to debug:
+
+salt-minion -l debug
+Run the minion in the foreground
+By not starting the minion in daemon mode (-d) one can view any output from the minion as it works:
+
+salt-minion
+Increase the default timeout value when running salt. For example, to change the default timeout to 60 seconds:
+
+salt -t 60
+For best results, combine all three:
+
+salt-minion -l debug        # On the minion
+salt '*' state.apply -t 60  # On the master
+Next steps
+
+This tutorial focused on getting a simple Salt States configuration working. Part 2 will build on this example to cover more advanced sls syntax and will explore more of the states that ship with Salt.
+
+## States tutorial, part 2 - More Complex States, Requisites
+
+https://docs.saltproject.io/en/latest/topics/tutorials/states_pt2.html#tutorial-states-part-2
+
+In the last part of the Salt States tutorial we covered the basics of installing a package. We will now modify our webserver.sls file to have requirements, and use even more Salt States.
+
+Call multiple States
+You can specify multiple State declaration under an ID declaration. For example, a quick modification to our webserver.sls to also start Apache if it is not running:
+
+1apache:
+2  pkg.installed: []
+3  service.running:
+4    - require:
+5      - pkg: apache
+Try stopping Apache before running state.apply once again and observe the output.
+
+Note
+
+For those running RedhatOS derivatives (Centos, AWS), you will want to specify the service name to be httpd. More on state service here, service state. With the example above, just add "- name: httpd" above the require line and with the same spacing.
+
+Require other states
+We now have a working installation of Apache so let's add an HTML file to customize our website. It isn't exactly useful to have a website without a webserver so we don't want Salt to install our HTML file until Apache is installed and running. Include the following at the bottom of your webserver/init.sls file:
+
+ 1apache:
+ 2  pkg.installed: []
+ 3  service.running:
+ 4    - require:
+ 5      - pkg: apache
+ 6
+ 7/var/www/index.html:                        # ID declaration
+ 8  file:                                     # state declaration
+ 9    - managed                               # function
+10    - source: salt://webserver/index.html   # function arg
+11    - require:                              # requisite declaration
+12      - pkg: apache                         # requisite reference
+line 7 is the ID declaration. In this example it is the location we want to install our custom HTML file. (Note: the default location that Apache serves may differ from the above on your OS or distro. /srv/www could also be a likely place to look.)
+
+Line 8 the State declaration. This example uses the Salt file state.
+
+Line 9 is the Function declaration. The managed function will download a file from the master and install it in the location specified.
+
+Line 10 is a Function arg declaration which, in this example, passes the source argument to the managed function.
+
+Line 11 is a Requisite declaration.
+
+Line 12 is a Requisite reference which refers to a state and an ID. In this example, it is referring to the ID declaration from our example in part 1. This declaration tells Salt not to install the HTML file until Apache is installed.
+
+Next, create the index.html file and save it in the webserver directory:
+
+<!DOCTYPE html>
+<html>
+    <head><title>Salt rocks</title></head>
+    <body>
+        <h1>This file brought to you by Salt</h1>
+    </body>
+</html>
+Last, call state.apply again and the minion will fetch and execute the highstate as well as our HTML file from the master using Salt's File Server:
+
+salt '*' state.apply
+Verify that Apache is now serving your custom HTML.
+
+require vs. watch
+
+There are two Requisite declaration, “require”, and “watch”. Not every state supports “watch”. The service state does support “watch” and will restart a service based on the watch condition.
+
+For example, if you use Salt to install an Apache virtual host configuration file and want to restart Apache whenever that file is changed you could modify our Apache example from earlier as follows:
+
+/etc/httpd/extra/httpd-vhosts.conf:
+  file.managed:
+    - source: salt://webserver/httpd-vhosts.conf
+
+apache:
+  pkg.installed: []
+  service.running:
+    - watch:
+      - file: /etc/httpd/extra/httpd-vhosts.conf
+    - require:
+      - pkg: apache
+If the pkg and service names differ on your OS or distro of choice you can specify each one separately using a Name declaration which explained in Part 3.
+
+Next steps
+In part 3 we will discuss how to use includes, extends, and templating to make a more complete State Tree configuration.
+
+## States tutorial, part 3 - Templating, Includes, Extends
+
+https://docs.saltproject.io/en/latest/topics/tutorials/states_pt3.html#tutorial-states-part-3
+
+This part of the tutorial will cover more advanced templating and configuration techniques for sls files.
+
+Templating SLS modules
+SLS modules may require programming logic or inline execution. This is accomplished with module templating. The default module templating system used is Jinja2 and may be configured by changing the renderer value in the master config.
+
+All states are passed through a templating system when they are initially read. To make use of the templating system, simply add some templating markup. An example of an sls module with templating markup may look like this:
+
+{% for usr in ['moe','larry','curly'] %}
+{{ usr }}:
+  user.present
+{% endfor %}
+This templated sls file once generated will look like this:
+
+moe:
+  user.present
+larry:
+  user.present
+curly:
+  user.present
+Here's a more complex example:
+
+# Comments in yaml start with a hash symbol.
+# Since jinja rendering occurs before yaml parsing, if you want to include jinja
+# in the comments you may need to escape them using 'jinja' comments to prevent
+# jinja from trying to render something which is not well-defined jinja.
+# e.g.
+# {# iterate over the Three Stooges using a {% for %}..{% endfor %} loop
+# with the iterator variable {{ usr }} becoming the state ID. #}
+{% for usr in 'moe','larry','curly' %}
+{{ usr }}:
+  group:
+    - present
+  user:
+    - present
+    - gid_from_name: True
+    - require:
+      - group: {{ usr }}
+{% endfor %}
+Using Grains in SLS modules
+Often times a state will need to behave differently on different systems. Salt grains objects are made available in the template context. The grains can be used from within sls modules:
+
+apache:
+  pkg.installed:
+    {% if grains['os'] == 'RedHat' %}
+    - name: httpd
+    {% elif grains['os'] == 'Ubuntu' %}
+    - name: apache2
+    {% endif %}
+Using Environment Variables in SLS modules
+You can use salt['environ.get']('VARNAME') to use an environment variable in a Salt state.
+
+MYENVVAR="world" salt-call state.template test.sls
+Create a file with contents from an environment variable:
+  file.managed:
+    - name: /tmp/hello
+    - contents: {{ salt['environ.get']('MYENVVAR') }}
+Error checking:
+
+{% set myenvvar = salt['environ.get']('MYENVVAR') %}
+{% if myenvvar %}
+
+Create a file with contents from an environment variable:
+  file.managed:
+    - name: /tmp/hello
+    - contents: {{ salt['environ.get']('MYENVVAR') }}
+
+{% else %}
+
+Fail - no environment passed in:
+  test.fail_without_changes
+
+{% endif %}
+Calling Salt modules from templates
+All of the Salt modules loaded by the minion are available within the templating system. This allows data to be gathered in real time on the target system. It also allows for shell commands to be run easily from within the sls modules.
+
+The Salt module functions are also made available in the template context as salt:
+
+The following example illustrates calling the group_to_gid function in the file execution module with a single positional argument called some_group_that_exists.
+
+moe:
+  user.present:
+    - gid: {{ salt['file.group_to_gid']('some_group_that_exists') }}
+One way to think about this might be that the gid key is being assigned a value equivalent to the following python pseudo-code:
+
+import salt.modules.file
+
+file.group_to_gid("some_group_that_exists")
+Note that for the above example to work, some_group_that_exists must exist before the state file is processed by the templating engine.
+
+Below is an example that uses the network.hw_addr function to retrieve the MAC address for eth0:
+
+salt["network.hw_addr"]("eth0")
+To examine the possible arguments to each execution module function, one can examine the module reference documentation:
+
+Advanced SLS module syntax
+Lastly, we will cover some incredibly useful techniques for more complex State trees.
+
+Include declaration
+A previous example showed how to spread a Salt tree across several files. Similarly, Requisites and Other Global State Arguments span multiple files by using an Include declaration. For example:
+
+python/python-libs.sls:
+
+python-dateutil:
+  pkg.installed
+python/django.sls:
+
+include:
+  - python.python-libs
+
+django:
+  pkg.installed:
+    - require:
+      - pkg: python-dateutil
+Extend declaration
+You can modify previous declarations by using an Extend declaration. For example the following modifies the Apache tree to also restart Apache when the vhosts file is changed:
+
+apache/apache.sls:
+
+apache:
+  pkg.installed
+apache/mywebsite.sls:
+
+include:
+  - apache.apache
+
+extend:
+  apache:
+    service:
+      - running
+      - watch:
+        - file: /etc/httpd/extra/httpd-vhosts.conf
+
+/etc/httpd/extra/httpd-vhosts.conf:
+  file.managed:
+    - source: salt://apache/httpd-vhosts.conf
+Using extend with require or watch
+
+The extend statement works differently for require or watch. It appends to, rather than replacing the requisite component.
+
+Name declaration
+You can override the ID declaration by using a Name declaration. For example, the previous example is a bit more maintainable if rewritten as follows:
+
+apache/mywebsite.sls:
+
+include:
+  - apache.apache
+
+extend:
+  apache:
+    service:
+      - running
+      - watch:
+        - file: mywebsite
+
+mywebsite:
+  file.managed:
+    - name: /etc/httpd/extra/httpd-vhosts.conf
+    - source: salt://apache/httpd-vhosts.conf
+Names declaration
+Even more powerful is using a Names declaration to override the ID declaration for multiple states at once. This often can remove the need for looping in a template. For example, the first example in this tutorial can be rewritten without the loop:
+
+stooges:
+  user.present:
+    - names:
+      - moe
+      - larry
+      - curly
+Next steps
+
+In part 4 we will discuss how to use salt's file_roots to set up a workflow in which states can be "promoted" from dev, to QA, to production.
+
+## States tutorial, part 4
+
+https://docs.saltproject.io/en/latest/topics/tutorials/states_pt4.html#tutorial-states-part-4
+
+This part of the tutorial will show how to use salt's file_roots to set up a workflow in which states can be "promoted" from dev, to QA, to production.
+
+### Salt fileserver path inheritance
+
+Salt's fileserver allows for more than one root directory per environment, like in the below example, which uses both a local directory and a secondary location shared to the salt master via NFS:
+
+```java
+# In the master config file (/etc/salt/master)
+file_roots:
+  base:
+    - /srv/salt
+    - /mnt/salt-nfs/base
+```
+
+Salt's fileserver collapses the list of root directories into a single virtual environment containing all files from each root. If the same file exists at the same relative path in more than one root, then the top-most match "wins". For example, if `/srv/salt/foo.txt` and `/mnt/salt-nfs/base/foo.txt` both exist, then `salt://foo.txt` will point to `/srv/salt/foo.txt`
+
+Note
+
+When using multiple fileserver backends, the order in which they are listed in the fileserver_backend parameter also matters. If both roots and git backends contain a file with the same relative path, and roots appears before git in the fileserver_backend list, then the file in roots will "win", and the file in gitfs will be ignored.
+
+A more thorough explanation of how Salt's modular fileserver works can be found here. We recommend reading this.
+
+### Environment configuration
+
+Configure a multiple-environment setup like so:
+
+```java
+file_roots:
+  base:
+    - /srv/salt/prod
+  qa:
+    - /srv/salt/qa
+    - /srv/salt/prod
+  dev:
+    - /srv/salt/dev
+    - /srv/salt/qa
+    - /srv/salt/prod
+```
+
+Given the path inheritance described above, files within `/srv/salt/prod` would be available in all environments. Files within `/srv/salt/qa` would be available in both `qa`, and `dev`. Finally, the files within `/srv/salt/dev` would only be available within the `dev` environment.
+
+Based on the order in which the roots are defined, new files/states can be placed within `/srv/salt/dev`, and pushed out to the dev hosts for testing.
+
+Those files/states can then be moved to the same relative path within `/srv/salt/qa`, and they are now available only in the `dev` and `qa` environments, allowing them to be pushed to QA hosts and tested.
+
+Finally, if moved to the same relative path within `/srv/salt/prod`, the files are now available in all three environments.
+
+#### Requesting files from specific fileserver environments
+
+See here for documentation on how to request files from specific environments.
+
+https://docs.saltproject.io/en/latest/ref/file_server/environments.html#file-server-environments
+
+### Practical Example
+
+As an example, consider a simple website, installed to /var/www/foobarcom. Below is a top.sls that can be used to deploy the website:
+
+```java
+sudo nano /srv/salt/prod/top.sls
+```
+
+```java
+base:
+  'web*prod*':
+    - webserver.foobarcom
+qa:
+  'web*qa*':
+    - webserver.foobarcom
+dev:
+  'web*dev*':
+    - webserver.foobarcom
+```
+
+#### Using pillar, roles can be assigned to the hosts:
+
+```java
+sudo nano /srv/pillar/top.sls
+```
+
+With this content
+
+```java
+base:
+  'web*prod*':
+    - webserver.prod
+  'web*qa*':
+    - webserver.qa
+  'web*dev*':
+    - webserver.dev
+```
+
+```java
+sudo nano /srv/pillar/webserver/prod.sls
+```
+
+With this content
+
+```java
+webserver_role: prod
+```
+
+```java
+sudo nano /srv/pillar/webserver/qa.sls
+```
+
+With this content
+
+```java
+webserver_role: qa
+```
+
+```java
+sudo nano /srv/pillar/webserver/dev.sls
+```
+
+With this content
+
+```java
+webserver_role: dev
+```
+
+And finally, the SLS to deploy the website:
+
+```java
+sudo nano /srv/salt/prod/webserver/foobarcom.sls
+```
+
+With this content
+
+```java
+{% if pillar.get('webserver_role', '') %}
+/var/www/foobarcom:
+  file.recurse:
+    - source: salt://webserver/src/foobarcom
+    - env: {{ pillar['webserver_role'] }}
+    - user: www
+    - group: www
+    - dir_mode: 755
+    - file_mode: 644
+{% endif %}
+```
+
+Given the above SLS, the source for the website should initially be placed in /srv/salt/dev/webserver/src/foobarcom.
+
+First, let's deploy to dev. Given the configuration in the top file, this can be done using state.apply:
+
+```java
+salt --pillar 'webserver_role:dev' state.apply
+```
+
+However, in the event that it is not desirable to apply all states configured in the top file (which could be likely in more complex setups), it is possible to apply just the states for the foobarcom website, by invoking state.apply with the desired SLS target as an argument:
+
+```java
+salt --pillar 'webserver_role:dev' state.apply webserver.foobarcom
+```
+
+Once the site has been tested in dev, then the files can be moved from /srv/salt/dev/webserver/src/foobarcom to /srv/salt/qa/webserver/src/foobarcom, and deployed using the following:
+
+```java
+salt --pillar 'webserver_role:qa' state.apply webserver.foobarcom
+```
+
+Finally, once the site has been tested in qa, then the files can be moved from /srv/salt/qa/webserver/src/foobarcom to /srv/salt/prod/webserver/src/foobarcom, and deployed using the following:
+
+```java
+salt --pillar 'webserver_role:prod' state.apply webserver.foobarcom
+```
+
+Thanks to Salt's fileserver inheritance, even though the files have been moved to within /srv/salt/prod, they are still available from the same salt:// URI in both the qa and dev environments.
+
+
+
 #### Check the status of what is running
 
 ```java
@@ -482,6 +1110,29 @@ Check UFW Status:
 
 ```bash
 sudo ufw status
+```
+
+#### Check the status of the firewall
+
+```java
+ufw numbered
+```
+
+Output
+
+```java
+Status: active
+
+To                         Action      From
+--                         ------      ----
+22                         ALLOW       Anywhere                  
+4505                       ALLOW       Anywhere                  
+4506                       ALLOW       Anywhere                  
+22/tcp                     ALLOW       Anywhere                  
+22 (v6)                    ALLOW       Anywhere (v6)             
+4505 (v6)                  ALLOW       Anywhere (v6)             
+4506 (v6)                  ALLOW       Anywhere (v6)             
+22/tcp (v6)                ALLOW       Anywhere (v6) 
 ```
 
 This command will show you the current status of UFW. If it is active, it will display “Status: active”.
