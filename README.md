@@ -705,25 +705,33 @@ https://docs.saltproject.io/en/latest/topics/tutorials/states_pt3.html#tutorial-
 
 This part of the tutorial will cover more advanced templating and configuration techniques for sls files.
 
-Templating SLS modules
+### Templating SLS modules
+
 SLS modules may require programming logic or inline execution. This is accomplished with module templating. The default module templating system used is Jinja2 and may be configured by changing the renderer value in the master config.
 
 All states are passed through a templating system when they are initially read. To make use of the templating system, simply add some templating markup. An example of an sls module with templating markup may look like this:
 
+```java
 {% for usr in ['moe','larry','curly'] %}
 {{ usr }}:
   user.present
 {% endfor %}
+```
+
 This templated sls file once generated will look like this:
 
+```java
 moe:
   user.present
 larry:
   user.present
 curly:
   user.present
+```
+
 Here's a more complex example:
 
+```java
 # Comments in yaml start with a hash symbol.
 # Since jinja rendering occurs before yaml parsing, if you want to include jinja
 # in the comments you may need to escape them using 'jinja' comments to prevent
@@ -741,9 +749,13 @@ Here's a more complex example:
     - require:
       - group: {{ usr }}
 {% endfor %}
-Using Grains in SLS modules
+```
+
+### Using Grains in SLS modules
+
 Often times a state will need to behave differently on different systems. Salt grains objects are made available in the template context. The grains can be used from within sls modules:
 
+```java
 apache:
   pkg.installed:
     {% if grains['os'] == 'RedHat' %}
@@ -751,9 +763,13 @@ apache:
     {% elif grains['os'] == 'Ubuntu' %}
     - name: apache2
     {% endif %}
-Using Environment Variables in SLS modules
-You can use salt['environ.get']('VARNAME') to use an environment variable in a Salt state.
+```
 
+### Using Environment Variables in SLS modules
+
+You can use `salt['environ.get']('VARNAME')` to use an environment variable in a Salt state.
+
+```java
 MYENVVAR="world" salt-call state.template test.sls
 Create a file with contents from an environment variable:
   file.managed:
@@ -775,40 +791,64 @@ Fail - no environment passed in:
   test.fail_without_changes
 
 {% endif %}
-Calling Salt modules from templates
+```
+
+### Calling Salt modules from templates
+
 All of the Salt modules loaded by the minion are available within the templating system. This allows data to be gathered in real time on the target system. It also allows for shell commands to be run easily from within the sls modules.
 
-The Salt module functions are also made available in the template context as salt:
+The Salt module functions are also made available in the template context as `salt:`
 
-The following example illustrates calling the group_to_gid function in the file execution module with a single positional argument called some_group_that_exists.
+The following example illustrates calling the `group_to_gid` function in the `file` execution module with a single positional argument called `some_group_that_exists`
 
+```java
 moe:
   user.present:
     - gid: {{ salt['file.group_to_gid']('some_group_that_exists') }}
+```
+
 One way to think about this might be that the gid key is being assigned a value equivalent to the following python pseudo-code:
 
+```java
 import salt.modules.file
 
 file.group_to_gid("some_group_that_exists")
-Note that for the above example to work, some_group_that_exists must exist before the state file is processed by the templating engine.
+```
 
-Below is an example that uses the network.hw_addr function to retrieve the MAC address for eth0:
+Note that for the above example to work, `some_group_that_exists` must exist before the state file is processed by the templating engine.
 
+Below is an example that uses the `network.hw_addr` function to retrieve the MAC address for eth0:
+
+```java
 salt["network.hw_addr"]("eth0")
+```
+
 To examine the possible arguments to each execution module function, one can examine the module reference documentation:
 
-Advanced SLS module syntax
+https://docs.saltproject.io/ref/modules/all
+
+### Advanced SLS module syntax
+
 Lastly, we will cover some incredibly useful techniques for more complex State trees.
 
-Include declaration
+#### Include declaration
+
 A previous example showed how to spread a Salt tree across several files. Similarly, Requisites and Other Global State Arguments span multiple files by using an Include declaration. For example:
 
+```java
 python/python-libs.sls:
+```
 
+```java
 python-dateutil:
   pkg.installed
-python/django.sls:
+```
 
+```java
+python/django.sls:
+```
+
+```java
 include:
   - python.python-libs
 
@@ -816,15 +856,26 @@ django:
   pkg.installed:
     - require:
       - pkg: python-dateutil
-Extend declaration
+```
+
+#### Extend declaration
+
 You can modify previous declarations by using an Extend declaration. For example the following modifies the Apache tree to also restart Apache when the vhosts file is changed:
 
+```java
 apache/apache.sls:
+```
 
+```java
 apache:
   pkg.installed
-apache/mywebsite.sls:
+```
 
+```java
+apache/mywebsite.sls:
+```
+
+```java
 include:
   - apache.apache
 
@@ -838,15 +889,21 @@ extend:
 /etc/httpd/extra/httpd-vhosts.conf:
   file.managed:
     - source: salt://apache/httpd-vhosts.conf
-Using extend with require or watch
+```
+
+#### Using extend with require or watch
 
 The extend statement works differently for require or watch. It appends to, rather than replacing the requisite component.
 
-Name declaration
+### Name declaration
+
 You can override the ID declaration by using a Name declaration. For example, the previous example is a bit more maintainable if rewritten as follows:
 
+```java
 apache/mywebsite.sls:
+```
 
+```java
 include:
   - apache.apache
 
@@ -861,15 +918,21 @@ mywebsite:
   file.managed:
     - name: /etc/httpd/extra/httpd-vhosts.conf
     - source: salt://apache/httpd-vhosts.conf
-Names declaration
+```
+
+### Names declaration
+
 Even more powerful is using a Names declaration to override the ID declaration for multiple states at once. This often can remove the need for looping in a template. For example, the first example in this tutorial can be rewritten without the loop:
 
+```java
 stooges:
   user.present:
     - names:
       - moe
       - larry
       - curly
+```
+
 Next steps
 
 In part 4 we will discuss how to use salt's file_roots to set up a workflow in which states can be "promoted" from dev, to QA, to production.
@@ -1034,20 +1097,19 @@ However, in the event that it is not desirable to apply all states configured in
 salt --pillar 'webserver_role:dev' state.apply webserver.foobarcom
 ```
 
-Once the site has been tested in dev, then the files can be moved from /srv/salt/dev/webserver/src/foobarcom to /srv/salt/qa/webserver/src/foobarcom, and deployed using the following:
+Once the site has been tested in dev, then the files can be moved from `/srv/salt/dev/webserver/src/foobarcom` to `/srv/salt/qa/webserver/src/foobarcom`, and deployed using the following:
 
 ```java
 salt --pillar 'webserver_role:qa' state.apply webserver.foobarcom
 ```
 
-Finally, once the site has been tested in qa, then the files can be moved from /srv/salt/qa/webserver/src/foobarcom to /srv/salt/prod/webserver/src/foobarcom, and deployed using the following:
+Finally, once the site has been tested in qa, then the files can be moved from `/srv/salt/qa/webserver/src/foobarcom` to `/srv/salt/prod/webserver/src/foobarcom`, and deployed using the following:
 
 ```java
 salt --pillar 'webserver_role:prod' state.apply webserver.foobarcom
 ```
 
-Thanks to Salt's fileserver inheritance, even though the files have been moved to within /srv/salt/prod, they are still available from the same salt:// URI in both the qa and dev environments.
-
+Thanks to Salt's fileserver inheritance, even though the files have been moved to within `/srv/salt/prod`, they are still available from the same `salt://` URI in both the qa and dev environments.
 
 
 #### Check the status of what is running
