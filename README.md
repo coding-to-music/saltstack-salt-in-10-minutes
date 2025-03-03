@@ -502,44 +502,62 @@ If the minions respond with True, it means they can communicate with the master.
 https://docs.saltproject.io/en/3006/topics/tutorials/states_pt1.html#states-tutorial
 
 
-Setting up the Salt State Tree
+### Setting up the Salt State Tree
+
 States are stored in text files on the master and transferred to the minions on demand via the master's File Server. The collection of state files make up the State Tree.
 
 To start using a central state system in Salt, the Salt File Server must first be set up. Edit the master config file (file_roots) and uncomment the following lines:
 
+```java
 file_roots:
   base:
     - /srv/salt
+```
+
 Note
 
 If you are deploying on FreeBSD via ports, the file_roots path defaults to /usr/local/etc/salt/states.
 
 Restart the Salt master in order to pick up this change:
 
+```java
 pkill salt-master
 salt-master -d
-Preparing the Top File
+```
+
+### Preparing the Top File
+
 On the master, in the directory uncommented in the previous step, (/srv/salt by default), create a new file called top.sls and add the following:
 
+```java
 base:
   '*':
     - webserver
+```
+
 The top file is separated into environments (discussed later). The default environment is base. Under the base environment a collection of minion matches is defined; for now simply specify all hosts (*).
 
-Targeting minions
+### Targeting minions
 
 The expressions can use any of the targeting mechanisms used by Salt — minions can be matched by glob, PCRE regular expression, or by grains. For example:
 
+```java
 base:
   'os:Fedora':
     - match: grain
     - webserver
-Create an sls file
+```
+
+### Create an sls file
+
 In the same directory as the top file, create a file named webserver.sls, containing the following:
 
+```java
 apache:                 # ID declaration
   pkg:                  # state declaration
     - installed         # function declaration
+```
+
 The first line, called the ID declaration, is an arbitrary identifier. In this case it defines the name of the package to be installed.
 
 Note
@@ -550,7 +568,7 @@ The second line, called the State declaration, defines which of the Salt States 
 
 The third line, called the Function declaration, defines which function in the pkg state module to call.
 
-Renderers
+### Renderers
 
 States sls files can be written in many formats. Salt requires only a simple data structure and is not concerned with how that data structure is built. Templating languages and DSLs are a dime-a-dozen and everyone has a favorite.
 
@@ -559,18 +577,22 @@ Building the expected data structure is the job of Salt Renderers and they are d
 In this tutorial we will be using YAML in Jinja2 templates, which is the default format. The default can be changed by editing renderer in the master configuration file.
 
 Install the package
+
 Next, let's run the state we created. Open a terminal on the master and run:
 
+```java
 salt '*' state.apply
+```
+
 Our master is instructing all targeted minions to run state.apply. When this function is executed without any SLS targets, a minion will download the top file and attempt to match the expressions within it. When the minion does match an expression the modules listed for it will be downloaded, compiled, and executed.
 
 Note
 
-This action is referred to as a "highstate", and can be run using the state.highstate function. However, to make the usage easier to understand ("highstate" is not necessarily an intuitive name), a state.apply function was added in version 2015.5.0, which when invoked without any SLS names will trigger a highstate. state.highstate still exists and can be used, but the documentation (as can be seen above) has been updated to reference state.apply, so keep the following in mind as you read the documentation:
+This action is referred to as a "highstate", and can be run using the `state.highstate` function. However, to make the usage easier to understand ("highstate" is not necessarily an intuitive name), a `state.apply` function was added in version 2015.5.0, which when invoked without any SLS names will trigger a highstate. `state.highstate` still exists and can be used, but the documentation (as can be seen above) has been updated to reference `state.apply`, so keep the following in mind as you read the documentation:
 
-state.apply invoked without any SLS names will run state.highstate
+- `state.apply` invoked without any SLS names will run `state.highstate`
 
-state.apply invoked with SLS names will run state.sls
+- `state.apply` invoked with SLS names will run `state.sls`
 
 Once completed, the minion will report back with a summary of all actions taken and all changes made.
 
@@ -578,40 +600,55 @@ Warning
 
 If you have created custom grain modules, they will not be available in the top file until after the first highstate. To make custom grains available on a minion's first highstate, it is recommended to use this example to ensure that the custom grains are synced when the minion starts.
 
-SLS File Namespace
+### SLS File Namespace
 
-Note that in the example above, the SLS file webserver.sls was referred to simply as webserver. The namespace for SLS files when referenced in top.sls or an Include declaration follows a few simple rules:
+Note that in the example above, the SLS file `webserver.sls` was referred to simply as `webserver`. The namespace for SLS files when referenced in `top.sls` or an `Include declaration` follows a few simple rules:
 
-The .sls is discarded (i.e. webserver.sls becomes webserver).
+The `.sls` is discarded (i.e. `webserver.sls` becomes `webserver`).
 
 Subdirectories can be used for better organization.
-Each subdirectory under the configured file_roots (default: /srv/salt/) is represented with a dot (following the Python import model) in Salt states and on the command line. webserver/dev.sls on the filesystem is referred to as webserver.dev in Salt
+
+Each subdirectory under the configured file_roots (default: `/srv/salt/`) is represented with a dot (following the Python import model) in Salt states and on the command line. webserver/dev.sls on the filesystem is referred to as webserver.dev in Salt
 
 Because slashes are represented as dots, SLS files can not contain dots in the name (other than the dot for the SLS suffix). The SLS file webserver_1.0.sls can not be matched, and webserver_1.0 would match the directory/file webserver_1/0.sls
 
-A file called init.sls in a subdirectory is referred to by the path of the directory. So, webserver/init.sls is referred to as webserver.
+A file called `init.sls` in a subdirectory is referred to by the path of the directory. So, `webserver/init.sls` is referred to as webserver.
 
 If both webserver.sls and webserver/init.sls happen to exist, webserver/init.sls will be ignored and webserver.sls will be the file referred to as webserver.
 
-Troubleshooting Salt
+### Troubleshooting Salt
 
 If the expected output isn't seen, the following tips can help to narrow down the problem.
 
-Turn up logging
+#### Turn up logging
+
 Salt can be quite chatty when you change the logging setting to debug:
 
+```java
 salt-minion -l debug
-Run the minion in the foreground
+```
+
+#### Run the minion in the foreground
+
 By not starting the minion in daemon mode (-d) one can view any output from the minion as it works:
 
+```java
 salt-minion
+```
+
 Increase the default timeout value when running salt. For example, to change the default timeout to 60 seconds:
 
+```java
 salt -t 60
+```
+
 For best results, combine all three:
 
+```java
 salt-minion -l debug        # On the minion
 salt '*' state.apply -t 60  # On the master
+```
+
 Next steps
 
 This tutorial focused on getting a simple Salt States configuration working. Part 2 will build on this example to cover more advanced sls syntax and will explore more of the states that ship with Salt.
@@ -622,23 +659,29 @@ https://docs.saltproject.io/en/latest/topics/tutorials/states_pt2.html#tutorial-
 
 In the last part of the Salt States tutorial we covered the basics of installing a package. We will now modify our webserver.sls file to have requirements, and use even more Salt States.
 
-Call multiple States
+### Call multiple States
+
 You can specify multiple State declaration under an ID declaration. For example, a quick modification to our webserver.sls to also start Apache if it is not running:
 
+```java
 1apache:
 2  pkg.installed: []
 3  service.running:
 4    - require:
 5      - pkg: apache
+```
+
 Try stopping Apache before running state.apply once again and observe the output.
 
 Note
 
 For those running RedhatOS derivatives (Centos, AWS), you will want to specify the service name to be httpd. More on state service here, service state. With the example above, just add "- name: httpd" above the require line and with the same spacing.
 
-Require other states
+### Require other states
+
 We now have a working installation of Apache so let's add an HTML file to customize our website. It isn't exactly useful to have a website without a webserver so we don't want Salt to install our HTML file until Apache is installed and running. Include the following at the bottom of your webserver/init.sls file:
 
+```java
  1apache:
  2  pkg.installed: []
  3  service.running:
@@ -651,20 +694,23 @@ We now have a working installation of Apache so let's add an HTML file to custom
 10    - source: salt://webserver/index.html   # function arg
 11    - require:                              # requisite declaration
 12      - pkg: apache                         # requisite reference
-line 7 is the ID declaration. In this example it is the location we want to install our custom HTML file. (Note: the default location that Apache serves may differ from the above on your OS or distro. /srv/www could also be a likely place to look.)
+```
 
-Line 8 the State declaration. This example uses the Salt file state.
+line 7 is the `ID declaration`. In this example it is the location we want to install our custom HTML file. (Note: the default location that Apache serves may differ from the above on your OS or distro. /srv/www could also be a likely place to look.)
 
-Line 9 is the Function declaration. The managed function will download a file from the master and install it in the location specified.
+Line 8 the `State declaration`. This example uses the Salt `file state`.
 
-Line 10 is a Function arg declaration which, in this example, passes the source argument to the managed function.
+Line 9 is the `Function declaration`. The managed function will download a file from the master and install it in the location specified.
 
-Line 11 is a Requisite declaration.
+Line 10 is a `Function arg declaration` which, in this example, passes the source argument to the managed function.
 
-Line 12 is a Requisite reference which refers to a state and an ID. In this example, it is referring to the ID declaration from our example in part 1. This declaration tells Salt not to install the HTML file until Apache is installed.
+Line 11 is a `Requisite declaration`.
 
-Next, create the index.html file and save it in the webserver directory:
+Line 12 is a `Requisite reference` which refers to a state and an ID. In this example, it is referring to the ID declaration from our example in part 1. This declaration tells Salt not to install the HTML file until Apache is installed.
 
+Next, create the `index.html` file and save it in the webserver directory:
+
+```java
 <!DOCTYPE html>
 <html>
     <head><title>Salt rocks</title></head>
@@ -672,17 +718,23 @@ Next, create the index.html file and save it in the webserver directory:
         <h1>This file brought to you by Salt</h1>
     </body>
 </html>
-Last, call state.apply again and the minion will fetch and execute the highstate as well as our HTML file from the master using Salt's File Server:
+```
 
+Last, call `state.apply` again and the minion will fetch and execute the `highstate` as well as our HTML file from the master using Salt's File Server:
+
+```java
 salt '*' state.apply
+```
+
 Verify that Apache is now serving your custom HTML.
 
-require vs. watch
+#### require vs. watch
 
 There are two Requisite declaration, “require”, and “watch”. Not every state supports “watch”. The service state does support “watch” and will restart a service based on the watch condition.
 
 For example, if you use Salt to install an Apache virtual host configuration file and want to restart Apache whenever that file is changed you could modify our Apache example from earlier as follows:
 
+```java
 /etc/httpd/extra/httpd-vhosts.conf:
   file.managed:
     - source: salt://webserver/httpd-vhosts.conf
@@ -694,9 +746,12 @@ apache:
       - file: /etc/httpd/extra/httpd-vhosts.conf
     - require:
       - pkg: apache
+```
+
 If the pkg and service names differ on your OS or distro of choice you can specify each one separately using a Name declaration which explained in Part 3.
 
 Next steps
+
 In part 3 we will discuss how to use includes, extends, and templating to make a more complete State Tree configuration.
 
 ## States tutorial, part 3 - Templating, Includes, Extends
