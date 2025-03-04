@@ -561,7 +561,7 @@ sudo nano /srv/salt/webserver.sls
 ```
 
 ```java
-apache:                 # ID declaration
+apache2:                # ID declaration
   pkg:                  # state declaration
     - installed         # function declaration
 ```
@@ -590,6 +590,78 @@ Next, let's run the state we created. Open a terminal on the master and run:
 
 ```java
 salt '*' state.apply
+```
+
+Output
+
+```java
+----------
+          ID: apache2
+    Function: pkg.installed
+      Result: True
+     Comment: The following packages were installed/updated: apache2
+     Started: 23:17:51.499421
+    Duration: 27338.12 ms
+     Changes:   
+              ----------
+              apache2:
+                  ----------
+                  new:
+                      2.4.58-1ubuntu8.5
+                  old:
+              apache2-bin:
+                  ----------
+                  new:
+                      2.4.58-1ubuntu8.5
+                  old:
+              apache2-data:
+                  ----------
+                  new:
+                      2.4.58-1ubuntu8.5
+                  old:
+              apache2-utils:
+                  ----------
+                  new:
+                      2.4.58-1ubuntu8.5
+                  old:
+              libapr1t64:
+                  ----------
+                  new:
+                      1.7.2-3.1ubuntu0.1
+                  old:
+              libaprutil1-dbd-sqlite3:
+                  ----------
+                  new:
+                      1.6.3-1.1ubuntu7
+                  old:
+              libaprutil1-ldap:
+                  ----------
+                  new:
+                      1.6.3-1.1ubuntu7
+                  old:
+              libaprutil1t64:
+                  ----------
+                  new:
+                      1.6.3-1.1ubuntu7
+                  old:
+              liblua5.4-0:
+                  ----------
+                  new:
+                      5.4.6-3build2
+                  old:
+              ssl-cert:
+                  ----------
+                  new:
+                      1.1.2ubuntu1
+                  old:
+
+Summary for vmi1240539.contaboserver.net
+------------
+Succeeded: 1 (changed=1)
+Failed:    0
+------------
+Total states run:     1
+Total run time:  27.338 s
 ```
 
 Our master is instructing all targeted minions to run state.apply. When this function is executed without any SLS targets, a minion will download the top file and attempt to match the expressions within it. When the minion does match an expression the modules listed for it will be downloaded, compiled, and executed.
