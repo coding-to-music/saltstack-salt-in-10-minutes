@@ -530,6 +530,10 @@ salt-master -d
 On the master, in the directory uncommented in the previous step, (/srv/salt by default), create a new file called top.sls and add the following:
 
 ```java
+sudo nano /srv/salt/top.sls
+```
+
+```java
 base:
   '*':
     - webserver
@@ -551,6 +555,10 @@ base:
 ### Create an sls file
 
 In the same directory as the top file, create a file named webserver.sls, containing the following:
+
+```java
+sudo nano /srv/salt/webserver.sls
+```
 
 ```java
 apache:                 # ID declaration
