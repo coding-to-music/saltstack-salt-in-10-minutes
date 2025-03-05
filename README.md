@@ -655,7 +655,7 @@ Output
                       1.1.2ubuntu1
                   old:
 
-Summary for vmi1240539.contaboserver.net
+Summary
 ------------
 Succeeded: 1 (changed=1)
 Failed:    0
