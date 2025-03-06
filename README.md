@@ -335,6 +335,14 @@ file_roots:
     - /srv/salt
 ```
 
+Set the ownership of /srv/salt to your username so you can store in GitHub
+
+```java
+sudo chown -R your_username:salt /srv/salt
+sudo usermod -aG salt your_username
+sudo chmod -R 770 /srv/salt
+```
+
 Restart Salt Master Service:
 
 ```java
